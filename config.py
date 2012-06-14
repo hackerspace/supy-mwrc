@@ -22,6 +22,7 @@ MediaWikiRecentChanges = conf.registerPlugin('MediaWikiRecentChanges')
 # conf.registerGlobalValue(MediaWikiRecentChanges, 'someConfigVariableName',
 #     registry.Boolean(False, """Help for someConfigVariableName."""))
 
+# I wasn't able to use SeparatedListOf without jumping through 8000 hoops.
 class NameSpaces(registry.Value):
     """Value must be list of namespace numbers separated by commas, or the
     string 'all' for all namespaces. (Main namespace should be the number 0,
@@ -50,27 +51,9 @@ class NameSpaces(registry.Value):
         else:
             return ', '.join(map(str, values))
 
-class CommaSeparatedListOfNonNegativeIntegers(registry.SeparatedListOf):
-    """Value must be list of integers separated by commas."""
-    Value = registry.NonNegativeInteger
-    def splitter(self, s):
-        return re.split(r'\s*,\s*', s)
-    def joiner(self, L):
-        return ', '.join(map(str, L))
-    def set(self, s):
-        L = self.splitter(s)
-        try:
-            for (i, s) in enumerate(L):
-                v = self.Value(int(s), '')
-                L[i] = v()
-            self.setValue(L)
-        except ValueError:
-            self.error()
-
 
 conf.registerGlobalValue(MediaWikiRecentChanges, 'url',
-    #XXX#registry.String('http://en.wikipedia.org/wiki/', """URL of the MediaWiki
-    registry.String('http://wiki.base48.cz/', """URL of the MediaWiki
+    registry.String('http://en.wikipedia.org/w/', """URL of the MediaWiki
     instance (e.g. http://en.wikipedia.org/wiki/)."""))
 conf.registerGlobalValue(MediaWikiRecentChanges, 'namespaces',
     NameSpaces([0], """Comma separated list of

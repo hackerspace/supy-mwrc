@@ -6,7 +6,6 @@
 import json
 import time
 import urllib
-import urllib2
 import urlparse
 
 import supybot.conf as conf
@@ -19,10 +18,6 @@ import supybot.callbacks as callbacks
 def iso_to_timestamp(s):
     st = time.strptime(s, '%Y-%m-%dT%H:%M:%SZ')
     return int(time.mktime(st))
-
-def timestamp_to_iso(ts):
-    st = time.gmtime(ts)
-    return time.strftime('%Y-%m-%dT%H:%M:%SZ', st)
 
 class MediaWikiRecentChanges(callbacks.Plugin):
     """
@@ -38,9 +33,13 @@ class MediaWikiRecentChanges(callbacks.Plugin):
         self.pluginConf = conf.supybot.plugins.MediaWikiRecentChanges
         # after loading the plugin, do not do update immediately
         self.last_update = time.time()
-
-        self.conf_last_change = 0
-        self.conf_channels = ['#test48']
+        # What should i use here? ideal behaviour would be to save state and
+        # remember the timestamp of the last change. Using zero here means the
+        # bot will announce changes on every startup. Using time.time() would
+        # mean that the bot will announce only changes made after the plugin
+        # was loaded, provided that the clocks of bothost and wiki are
+        # synchronized and in the same timezone (=problem)...
+        self.last_change = 0
 
     # freenode seems to send ping every 2 minutes
     def __call__(self, irc, msg):
@@ -49,46 +48,37 @@ class MediaWikiRecentChanges(callbacks.Plugin):
         now = time.time()
 
         if now > self.last_update + self.pluginConf.waitPeriod():
-            self.log.debug('__call__: updating')
+            self.log.debug('MWRC: updating')
             self.last_update = now
             # run this in separate thread?
-            self.check_recent_changes(irc)
+            self.announceNewChanges(irc)
         else:
-            self.log.debug('__call__: not updating')
+            self.log.debug('MWRC: not updating')
             pass
 
-    # XXX: keep a command for unconditionally listing changes?
-    # catch and print exceptions here? web.py / strError
-    # XXX: help string
     def wikichanges(self, irc, msg, args):
-        """
-        takes no arguments
-
-        Show recent changes of the wiki.
-        """
-        self.check_recent_changes(irc)
+        try:
+            changes = self.getRecentChanges()
+        except Exception as e:
+            irc.reply('Error: ' + utils.web.strError(e))
+        else:
+            for change in changes:
+                irc.reply(change[1], prefixNick=False)
     wikichanges = wrap(wikichanges)
 
-    def resetlastchange(self, irc, msg, args):
-        self.conf_last_change = 0
-        irc.replySuccess()
-    resetlastchange = wrap(resetlastchange)
+    #def resetlastchange(self, irc, msg, args):
+    #    self.last_change = 0
+    #    irc.replySuccess()
+    #resetlastchange = wrap(resetlastchange)
 
-    def check_recent_changes(self, irc):
-        # XXX compare times first
-
-        url = self.build_query_url()
-        self.log.debug(url)
-        fh = urllib2.urlopen(url)
-        json_response = fh.read()
+    def getRecentChanges(self):
+        url = self.buildQueryURL()
+        #self.log.debug(url)
+        json_response = utils.web.getUrl(url)
 
         response = json.loads(json_response)
         messages = []
         for change in response['query']['recentchanges']:
-            # skip if we've already seen this change
-            if iso_to_timestamp(change['timestamp']) <= self.conf_last_change:
-                continue
-
             if change['type'] == 'edit':
                 msg = u'User {user} modified {url}'
             elif change['type'] == 'new':
@@ -99,31 +89,41 @@ class MediaWikiRecentChanges(callbacks.Plugin):
                 continue
 
             msg = msg.format(user=change['user'],
-                url=self.build_title_url(change['title'])
+                url=self.buildTitleURL(change['title'])
             )
 
             if change['comment']:
                 msg = u'{0} - {1}'.format(msg, change['comment'])
 
             msg = msg.encode('utf-8')
-            messages.append(msg)
-            #irc.reply(msg, prefixNick=False)
+            change_ts = iso_to_timestamp(change['timestamp'])
+            messages.append((change_ts, msg))
+
+        return messages[::-1]
+
+    def announceNewChanges(self, irc):
+        changes = self.getRecentChanges()
+        self.log.debug('Changes total: %s', len(changes))
+        self.log.debug('Ts: %s %s', self.last_change, map(lambda ch: ch[0],
+            changes))
+        changes = filter(lambda change: change[0] > self.last_change, changes)
+        self.log.debug('Changes filtered: %s', len(changes))
 
         try:
-            new_last_change = max(map(lambda change: iso_to_timestamp(change['timestamp']),
-                response['query']['recentchanges']
-            ))
-            self.conf_last_change = new_last_change
-        except:
+            self.last_change = max(map(lambda change: change[0], changes))
+        except ValueError:
             pass
 
-        messages = messages[::-1]
-        for channel in self.conf_channels:
-            for msg in messages:
-                irc.reply(msg, prefixNick=False, to=channel)
-            self.log.debug('Sent %s changes to channel %s', len(messages), channel)
+        messages = map(lambda change: change[1], changes)
+        chans = 0
+        for channel in irc.state.channels.keys():
+            if self.pluginConf.announce.get(channel)():
+                chans += 1
+                for msg in messages:
+                    irc.reply(msg, prefixNick=False, to=channel)
+        self.log.info('Sent %s changes to %s channels', len(messages), chans)
 
-    def build_query_url(self):
+    def buildQueryURL(self):
         url_parts = list(urlparse.urlparse(self.pluginConf.url()))
 
         if not url_parts[2].endswith('/'):
@@ -140,8 +140,6 @@ class MediaWikiRecentChanges(callbacks.Plugin):
         if self.pluginConf.namespaces():
             query['rcnamespace'] = '|'.join(map(str,
                 self.pluginConf.namespaces()))
-        if self.conf_last_change:
-            query['rcstart'] = self.conf_last_change + 1
         if not self.pluginConf.showMinor():
             query['rcshow'] = '!minor'
         query['rclimit'] = self.pluginConf.limit()
@@ -149,7 +147,7 @@ class MediaWikiRecentChanges(callbacks.Plugin):
         url_parts[4] = urllib.urlencode(query)
         return urlparse.urlunparse(url_parts)
 
-    def build_title_url(self, title):
+    def buildTitleURL(self, title):
         url_parts = list(urlparse.urlparse(self.pluginConf.url()))
 
         if not url_parts[2].endswith('/'):
