@@ -53,8 +53,8 @@ class NameSpaces(registry.Value):
 
 
 conf.registerGlobalValue(MediaWikiRecentChanges, 'url',
-    registry.String('http://en.wikipedia.org/w/', """URL of the MediaWiki
-    instance (e.g. http://en.wikipedia.org/wiki/)."""))
+    registry.String('http://en.wikipedia.org/w/', """[BROKEN] URL of the
+    MediaWiki instance (e.g. http://en.wikipedia.org/w/)."""))
 conf.registerGlobalValue(MediaWikiRecentChanges, 'namespaces',
     NameSpaces([0], """Comma separated list of
     namespace numbers that should be watched for changes. Default is '0' for
@@ -65,16 +65,10 @@ conf.registerGlobalValue(MediaWikiRecentChanges, 'limit',
     registry.PositiveInteger(5, """Maximal number of changes to show each
     time."""))
 conf.registerGlobalValue(MediaWikiRecentChanges, 'waitPeriod',
-    #XXX#registry.PositiveInteger(1800, """Number of seconds to wait between each
-    registry.PositiveInteger(200, """Number of seconds to wait between each
+    registry.PositiveInteger(1800, """Number of seconds to wait between each
     check."""))
 conf.registerChannelValue(MediaWikiRecentChanges, 'announce',
     registry.Boolean(False, """Announce changes on this channel."""))
-conf.registerGlobalValue(MediaWikiRecentChanges, 'lastChange',
-    registry.NonNegativeInteger(0, """This variable is used to store the time
-    of the last retrieved update. This is an ugly hack and you should not
-    change this unless you are debugging the plugin;)"""))
-
 
 
 # vim:set shiftwidth=4 tabstop=4 expandtab textwidth=79:

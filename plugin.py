@@ -48,12 +48,12 @@ class MediaWikiRecentChanges(callbacks.Plugin):
         now = time.time()
 
         if now > self.last_update + self.pluginConf.waitPeriod():
-            self.log.debug('MWRC: updating')
+            #self.log.debug('MWRC: updating')
             self.last_update = now
             # run this in separate thread?
             self.announceNewChanges(irc)
         else:
-            self.log.debug('MWRC: not updating')
+            #self.log.debug('MWRC: not updating')
             pass
 
     def wikichanges(self, irc, msg, args):
@@ -65,11 +65,6 @@ class MediaWikiRecentChanges(callbacks.Plugin):
             for change in changes:
                 irc.reply(change[1], prefixNick=False)
     wikichanges = wrap(wikichanges)
-
-    #def resetlastchange(self, irc, msg, args):
-    #    self.last_change = 0
-    #    irc.replySuccess()
-    #resetlastchange = wrap(resetlastchange)
 
     def getRecentChanges(self):
         url = self.buildQueryURL()
@@ -103,11 +98,11 @@ class MediaWikiRecentChanges(callbacks.Plugin):
 
     def announceNewChanges(self, irc):
         changes = self.getRecentChanges()
-        self.log.debug('Changes total: %s', len(changes))
-        self.log.debug('Ts: %s %s', self.last_change, map(lambda ch: ch[0],
-            changes))
+        #self.log.debug('Changes total: %s', len(changes))
+        #self.log.debug('Ts: %s %s', self.last_change, map(lambda ch: ch[0],
+        #    changes))
         changes = filter(lambda change: change[0] > self.last_change, changes)
-        self.log.debug('Changes filtered: %s', len(changes))
+        #self.log.debug('Changes filtered: %s', len(changes))
 
         try:
             self.last_change = max(map(lambda change: change[0], changes))
@@ -121,7 +116,7 @@ class MediaWikiRecentChanges(callbacks.Plugin):
                 chans += 1
                 for msg in messages:
                     irc.reply(msg, prefixNick=False, to=channel)
-        self.log.info('Sent %s changes to %s channels', len(messages), chans)
+        #self.log.debug('Sent %s changes to %s channels', len(messages), chans)
 
     def buildQueryURL(self):
         url_parts = list(urlparse.urlparse(self.pluginConf.url()))
