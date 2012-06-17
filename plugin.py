@@ -13,6 +13,8 @@ import supybot.utils as utils
 from supybot.commands import *
 import supybot.plugins as plugins
 import supybot.ircutils as ircutils
+import supybot.ircmsgs as ircmsgs
+import supybot.schedule as schedule
 import supybot.callbacks as callbacks
 
 def iso_to_timestamp(s):
@@ -30,9 +32,8 @@ class MediaWikiRecentChanges(callbacks.Plugin):
     def __init__(self, irc):
         self.__parent = super(MediaWikiRecentChanges, self)
         self.__parent.__init__(irc)
+        self.irc = irc
         self.pluginConf = conf.supybot.plugins.MediaWikiRecentChanges
-        # after loading the plugin, do not do update immediately
-        self.last_update = time.time()
         # What should i use here? ideal behaviour would be to save state and
         # remember the timestamp of the last change. Using zero here means the
         # bot will announce changes on every startup. Using time.time() would
@@ -40,21 +41,27 @@ class MediaWikiRecentChanges(callbacks.Plugin):
         # was loaded, provided that the clocks of bothost and wiki are
         # synchronized and in the same timezone (=problem)...
         self.last_change = 0
+        self.scheduleNextCheck()
 
-    # freenode seems to send ping every 2 minutes
-    def __call__(self, irc, msg):
-        self.__parent.__call__(irc, msg)
-        irc = callbacks.SimpleProxy(irc, msg)
-        now = time.time()
-
-        if now > self.last_update + self.pluginConf.waitPeriod():
-            #self.log.debug('MWRC: updating')
-            self.last_update = now
-            # run this in separate thread?
-            self.announceNewChanges(irc)
-        else:
-            #self.log.debug('MWRC: not updating')
+    def die(self):
+        # remove scheduler event
+        try:
+            schedule.removeEvent('mwrcEvent')
+        except KeyError:
             pass
+        self.__parent.die()
+
+    def scheduleNextCheck(self):
+        def event():
+            self.log.debug('MWRC: Firing scheduler event')
+            self.announceNewChanges(self.irc)
+            self.scheduleNextCheck()
+
+        self.log.debug('MWRC: Scheduling next check')
+        schedule.addEvent(event,
+            time.time() + self.pluginConf.waitPeriod(),
+            'mwrcEvent'
+        )
 
     def wikichanges(self, irc, msg, args):
         try:
@@ -115,7 +122,8 @@ class MediaWikiRecentChanges(callbacks.Plugin):
             if self.pluginConf.announce.get(channel)():
                 chans += 1
                 for msg in messages:
-                    irc.reply(msg, prefixNick=False, to=channel)
+                    #irc.reply(msg, prefixNick=False, to=channel)
+                    irc.queueMsg(ircmsgs.privmsg(channel, msg))
         #self.log.debug('Sent %s changes to %s channels', len(messages), chans)
 
     def buildQueryURL(self):

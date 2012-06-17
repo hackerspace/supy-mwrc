@@ -12,8 +12,5 @@ KNOWN PROBLEMS
    more elegant variation thereof, or automatically figuring out the urls of pages
    via API.
 
- * Web content should be retrieved in separate thread so that it does not block
-   the rest of the bot.
-
  * Only one wiki instance can be watched. I was too lazy to properly implement
    possibility of M channels watching N wikis.

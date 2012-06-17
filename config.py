@@ -53,8 +53,9 @@ class NameSpaces(registry.Value):
 
 
 conf.registerGlobalValue(MediaWikiRecentChanges, 'url',
-    registry.String('http://en.wikipedia.org/w/', """[BROKEN] URL of the
-    MediaWiki instance (e.g. http://en.wikipedia.org/w/)."""))
+    registry.String('http://en.wikipedia.org/w/', """URL of the
+    MediaWiki instance, where the api.php lives. (e.g.
+    http://en.wikipedia.org/w/)."""))
 conf.registerGlobalValue(MediaWikiRecentChanges, 'namespaces',
     NameSpaces([0], """Comma separated list of
     namespace numbers that should be watched for changes. Default is '0' for
