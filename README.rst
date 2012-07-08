@@ -29,7 +29,11 @@ KNOWN BUGS
 * Only one wiki instance can be watched. I was too lazy to properly implement
   possibility of M channels watching N wikis.
 
+* It would probably be better if the bot stored timestamp of the last seen
+  change so that we couldn't see them multiple times on plugin reload or bot
+  restart.
+
 LICENSE
 -------
 
-`WTFPL<http://sam.zoy.org/wtfpl/>`_.
+`WTFPL <http://sam.zoy.org/wtfpl/>`_.
