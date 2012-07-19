@@ -155,7 +155,7 @@ class MediaWikiRecentChanges(callbacks.Plugin):
 
     def buildTitleURL(self, title):
         template = self.pluginConf.pageUrl()
-        return template.format(title.replace(' ', '_'))
+        return template.format(page=title.replace(' ', '_'))
 
 
 Class = MediaWikiRecentChanges

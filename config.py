@@ -56,9 +56,9 @@ conf.registerGlobalValue(MediaWikiRecentChanges, 'apiUrl',
     registry.String('http://en.wikipedia.org/w/api.php', """URL of the
     MediaWiki instance API page. (e.g. http://en.wikipedia.org/w/api.php)."""))
 conf.registerGlobalValue(MediaWikiRecentChanges, 'pageUrl',
-    registry.String('http://en.wikipedia.org/wiki/{}', """URL through which the
-    individual pages can be accessed. Use {} where the name of the page should
-    be. (e.g. http://en.wikipedia.org/wiki/{})."""))
+    registry.String('http://en.wikipedia.org/wiki/{page}', """URL through which
+    the individual pages can be accessed. Use {page} where the name of the page
+    should be. (e.g. http://en.wikipedia.org/wiki/{page})."""))
 conf.registerGlobalValue(MediaWikiRecentChanges, 'namespaces',
     NameSpaces([0], """Comma separated list of
     namespace numbers that should be watched for changes. Default is '0' for
