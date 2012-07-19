@@ -54,8 +54,10 @@ class MediaWikiRecentChanges(callbacks.Plugin):
     def scheduleNextCheck(self):
         def event():
             self.log.debug('MWRC: Firing scheduler event')
-            self.announceNewChanges(self.irc)
-            self.scheduleNextCheck()
+            try:
+                self.announceNewChanges(self.irc)
+            finally:
+                self.scheduleNextCheck()
 
         self.log.debug('MWRC: Scheduling next check')
         schedule.addEvent(event,
@@ -104,7 +106,12 @@ class MediaWikiRecentChanges(callbacks.Plugin):
         return messages[::-1]
 
     def announceNewChanges(self, irc):
-        changes = self.getRecentChanges()
+        try:
+            changes = self.getRecentChanges()
+        except Exception as e:
+            self.log.error('MWRC: Cannot retrieve recent changes: %s' %
+                           utils.web.strError(e))
+            return
         #self.log.debug('Changes total: %s', len(changes))
         #self.log.debug('Ts: %s %s', self.last_change, map(lambda ch: ch[0],
         #    changes))
