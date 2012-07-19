@@ -134,11 +134,7 @@ class MediaWikiRecentChanges(callbacks.Plugin):
         #self.log.debug('Sent %s changes to %s channels', len(messages), chans)
 
     def buildQueryURL(self):
-        url_parts = list(urlparse.urlparse(self.pluginConf.url()))
-
-        if not url_parts[2].endswith('/'):
-            url_parts[2] += '/'
-        url_parts[2] += 'api.php'
+        url_parts = list(urlparse.urlparse(self.pluginConf.apiUrl()))
 
         query = {
             'action': 'query',
@@ -158,13 +154,8 @@ class MediaWikiRecentChanges(callbacks.Plugin):
         return urlparse.urlunparse(url_parts)
 
     def buildTitleURL(self, title):
-        url_parts = list(urlparse.urlparse(self.pluginConf.url()))
-
-        if not url_parts[2].endswith('/'):
-            url_parts[2] += '/'
-        url_parts[2] += title.replace(' ', '_')
-
-        return urlparse.urlunparse(url_parts)
+        template = self.pluginConf.pageUrl()
+        return template.format(title.replace(' ', '_'))
 
 
 Class = MediaWikiRecentChanges

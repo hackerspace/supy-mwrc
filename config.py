@@ -52,10 +52,13 @@ class NameSpaces(registry.Value):
             return ', '.join(map(str, values))
 
 
-conf.registerGlobalValue(MediaWikiRecentChanges, 'url',
-    registry.String('http://en.wikipedia.org/w/', """URL of the
-    MediaWiki instance, where the api.php lives. (e.g.
-    http://en.wikipedia.org/w/)."""))
+conf.registerGlobalValue(MediaWikiRecentChanges, 'apiUrl',
+    registry.String('http://en.wikipedia.org/w/api.php', """URL of the
+    MediaWiki instance API page. (e.g. http://en.wikipedia.org/w/api.php)."""))
+conf.registerGlobalValue(MediaWikiRecentChanges, 'pageUrl',
+    registry.String('http://en.wikipedia.org/wiki/{}', """URL through which the
+    individual pages can be accessed. Use {} where the name of the page should
+    be. (e.g. http://en.wikipedia.org/wiki/{})."""))
 conf.registerGlobalValue(MediaWikiRecentChanges, 'namespaces',
     NameSpaces([0], """Comma separated list of
     namespace numbers that should be watched for changes. Default is '0' for
