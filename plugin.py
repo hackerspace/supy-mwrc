@@ -65,7 +65,12 @@ class MediaWikiRecentChanges(callbacks.Plugin):
             'mwrcEvent'
         )
 
+    @wrap
     def wikichanges(self, irc, msg, args):
+        """takes no arguments
+
+        Prints latest changes on MediaWiki instance.
+        """
         try:
             changes = self.getRecentChanges()
         except Exception as e:
@@ -73,7 +78,6 @@ class MediaWikiRecentChanges(callbacks.Plugin):
         else:
             for change in changes:
                 irc.reply(change[1], prefixNick=False)
-    wikichanges = wrap(wikichanges)
 
     def getRecentChanges(self):
         url = self.buildQueryURL()
