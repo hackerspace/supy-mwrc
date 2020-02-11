@@ -6,7 +6,7 @@
 import json
 import time
 import urllib
-import urlparse
+import urllib.parse
 
 import supybot.conf as conf
 import supybot.utils as utils
@@ -88,9 +88,9 @@ class MediaWikiRecentChanges(callbacks.Plugin):
         messages = []
         for change in response['query']['recentchanges']:
             if change['type'] == 'edit':
-                msg = u'User {user} modified {url}'
+                msg = 'User {user} modified {url}'
             elif change['type'] == 'new':
-                msg = u'User {user} created {url}'
+                msg = 'User {user} created {url}'
             else:
                 self.log.warning('Ignoring unknown change type: %s',
                     change['type'])
@@ -101,9 +101,8 @@ class MediaWikiRecentChanges(callbacks.Plugin):
             )
 
             if change['comment']:
-                msg = u'{0} - {1}'.format(msg, change['comment'])
+                msg = '{0} - {1}'.format(msg, change['comment'])
 
-            msg = msg.encode('utf-8')
             change_ts = iso_to_timestamp(change['timestamp'])
             messages.append((change_ts, msg))
 
@@ -138,7 +137,7 @@ class MediaWikiRecentChanges(callbacks.Plugin):
         #self.log.debug('Sent %s changes to %s channels', len(messages), chans)
 
     def buildQueryURL(self):
-        url_parts = list(urlparse.urlparse(self.pluginConf.apiUrl()))
+        url_parts = list(urllib.parse.urlparse(self.pluginConf.apiUrl()))
 
         query = {
             'action': 'query',
@@ -154,8 +153,8 @@ class MediaWikiRecentChanges(callbacks.Plugin):
             query['rcshow'] = '!minor'
         query['rclimit'] = self.pluginConf.limit()
 
-        url_parts[4] = urllib.urlencode(query)
-        return urlparse.urlunparse(url_parts)
+        url_parts[4] = urllib.parse.urlencode(query)
+        return urllib.parse.urlunparse(url_parts)
 
     def buildTitleURL(self, title):
         template = self.pluginConf.pageUrl()

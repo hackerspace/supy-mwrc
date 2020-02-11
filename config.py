@@ -34,7 +34,7 @@ class NameSpaces(registry.Value):
 
         try:
             L = re.split(r'\s*,\s*', s)
-            L = map(int, L)
+            L = list(map(int, L))
             self.setValue(L)
         except ValueError:
             self.error()
