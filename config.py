@@ -40,7 +40,7 @@ class NameSpaces(registry.Value):
             self.error()
 
     def setValue(self, v):
-        if not all(map(lambda n: n >= 0, v)):
+        if not all([n >= 0 for n in v]):
             self.error()
         super(NameSpaces, self).setValue(v)
 

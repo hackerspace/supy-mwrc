@@ -5,8 +5,7 @@
 
 import json
 import time
-import urllib
-import urllib.parse
+import urllib.request, urllib.parse, urllib.error
 
 import supybot.conf as conf
 import supybot.utils as utils
@@ -116,16 +115,16 @@ class MediaWikiRecentChanges(callbacks.Plugin):
                            utils.web.strError(e))
             return
 
-        changes = list(filter(lambda change: change[0] > self.last_change, changes))
+        changes = [change for change in changes if change[0] > self.last_change]
 
         try:
-            self.last_change = max(map(lambda change: change[0], changes))
+            self.last_change = max([change[0] for change in changes])
         except ValueError:
             pass
 
-        messages = list(map(lambda change: change[1], changes))
+        messages = [change[1] for change in changes]
         chans = 0
-        for channel in irc.state.channels.keys():
+        for channel in list(irc.state.channels.keys()):
             if self.pluginConf.announce.get(channel)():
                 chans += 1
                 for msg in messages:
