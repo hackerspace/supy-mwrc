@@ -115,26 +115,21 @@ class MediaWikiRecentChanges(callbacks.Plugin):
             self.log.error('MWRC: Cannot retrieve recent changes: %s' %
                            utils.web.strError(e))
             return
-        #self.log.debug('Changes total: %s', len(changes))
-        #self.log.debug('Ts: %s %s', self.last_change, map(lambda ch: ch[0],
-        #    changes))
-        changes = filter(lambda change: change[0] > self.last_change, changes)
-        #self.log.debug('Changes filtered: %s', len(changes))
+
+        changes = list(filter(lambda change: change[0] > self.last_change, changes))
 
         try:
             self.last_change = max(map(lambda change: change[0], changes))
         except ValueError:
             pass
 
-        messages = map(lambda change: change[1], changes)
+        messages = list(map(lambda change: change[1], changes))
         chans = 0
         for channel in irc.state.channels.keys():
             if self.pluginConf.announce.get(channel)():
                 chans += 1
                 for msg in messages:
-                    #irc.reply(msg, prefixNick=False, to=channel)
                     irc.queueMsg(ircmsgs.privmsg(channel, msg))
-        #self.log.debug('Sent %s changes to %s channels', len(messages), chans)
 
     def buildQueryURL(self):
         url_parts = list(urllib.parse.urlparse(self.pluginConf.apiUrl()))
