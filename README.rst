@@ -22,9 +22,6 @@ KNOWN BUGS
 * Only one wiki instance can be watched. I was too lazy to properly implement
   possibility of M channels watching N wikis.
 
-* The bot does not remember timestamp of the last change across plugin reload
-  or bot restart. It should be stored on disk.
-
 LICENSE
 -------
 

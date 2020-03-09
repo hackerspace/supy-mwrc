@@ -20,6 +20,8 @@ def iso_to_timestamp(s):
     st = time.strptime(s, '%Y-%m-%dT%H:%M:%SZ')
     return int(time.mktime(st))
 
+filename = conf.supybot.directories.data.dirize('MediaWikiRecentChanges.last')
+
 class MediaWikiRecentChanges(callbacks.Plugin):
     """
     Announces recent changes of a MediaWiki instance. You need to set the
@@ -33,13 +35,7 @@ class MediaWikiRecentChanges(callbacks.Plugin):
         self.__parent.__init__(irc)
         self.irc = irc
         self.pluginConf = conf.supybot.plugins.MediaWikiRecentChanges
-        # What should i use here? ideal behaviour would be to save state and
-        # remember the timestamp of the last change. Using zero here means the
-        # bot will announce changes on every startup. Using time.time() would
-        # mean that the bot will announce only changes made after the plugin
-        # was loaded, provided that the clocks of bothost and wiki are
-        # synchronized and in the same timezone (=problem)...
-        self.last_change = 0
+        self.last_change = self.loadTimeStamp()
         self.scheduleNextCheck()
 
     def die(self):
@@ -119,6 +115,7 @@ class MediaWikiRecentChanges(callbacks.Plugin):
 
         try:
             self.last_change = max([change[0] for change in changes])
+            self.saveTimeStamp(self.last_change)
         except ValueError:
             pass
 
@@ -153,6 +150,22 @@ class MediaWikiRecentChanges(callbacks.Plugin):
     def buildTitleURL(self, title):
         template = self.pluginConf.pageUrl()
         return template.format(page=title.replace(' ', '_'))
+
+    def loadTimeStamp(self):
+        try:
+            with open(filename, 'r') as f:
+                contents = f.read()
+            return int(contents, 10)
+        except Exception as e:
+            self.log.error('MWRC: cannot load last change timestamp: %s' % e)
+        return 0
+
+    def saveTimeStamp(self, last_change):
+        try:
+            with open(filename, 'w') as f:
+                f.write(str(last_change))
+        except Exception as e:
+            self.log.error('MWRC: cannot save last change timestamp: %s' % e)
 
 
 Class = MediaWikiRecentChanges
